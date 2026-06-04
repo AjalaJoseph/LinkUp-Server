@@ -1,4 +1,6 @@
-import { registerUser, loginService,updateService } from "../services/authService.js";
+import { registerUser, loginService,updateService, uploadProfileImageService, cloudinaryService } from "../services/authService.js";
+import { uploadToCloudinary } from "../services/cloudinaryService.js"
+import {generateAccessToken} from '../utils/generateToken.js'
 export const registerController = async(req, res) =>{
     try{
         const {name, email, password} = req.body
@@ -60,7 +62,6 @@ export const loginController = async (req, res) =>{
 //  update profit controller
 export const updateProfitController = async(req, res) =>{
     try{
-        console.log(req.body, req.user)
         const {state, city, bio, skills} = req.body
         const {id, email} = req.user
         // console.log(id, email)
@@ -81,5 +82,50 @@ export const updateProfitController = async(req, res) =>{
     }
     catch(error){
         return res.status(400).json({ status: "fail", message: error.message || "Failed to update profile" });
+    }
+}
+//  profile picture image uploading controller
+export const uploadProfileImageController = async (req, res) =>{
+    try{
+        const {id} = req.user
+        const file = req.file
+        
+        if(!file){
+            return res.status(400).json({ 
+                status: "fail",
+                 message: "Please select an image file"
+                });
+        }
+        const imageUrl = await cloudinaryService(file.buffer)
+        const data ={
+            id:id,
+            imageUrl:imageUrl.secure_url
+        }
+        const saveToDatabase = await uploadProfileImageService(data)
+        
+        return res.status(200).json({
+            status: "success",
+            message: "Profile picture uploaded successfully!",
+            data: saveToDatabase
+        });
+    }
+    catch (error) {
+        console.error("Upload controller operation error:", error);
+        return res.status(400).json({ status: "error", message: error.message || "Failed to upload image" });
+    }
+}
+
+//  refresh token controller
+export const refreshTokenController = async(req, res)=>{
+    try{
+        const {id, email} =req.user
+        const newAccessToken = await generateAccessToken(id, email)
+        return res.status(200).json({
+            status: "success",
+            accessToken: newAccessToken
+        });
+    }
+    catch(error){
+        return res.status(400).json({status:"fail", message:error.message})
     }
 }

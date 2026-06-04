@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt'
-import { findUserByEmail, createUser,upadeteProfit } from '../models/user.js'
+import { findUserByEmail, createUser,upadeteProfit, uploadProfilePic,  } from '../models/user.js'
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js'
 import { redis } from '../config/redis.js'  
-
+import { uploadToCloudinary, deleteImageFromCloudinary } from './cloudinaryService.js'
+import cloudinary from '../config/cloudinary.js'
 export const registerUser = async(user) =>{
     const email = user.email
     const userExist = await findUserByEmail(email)
@@ -46,7 +47,30 @@ export const loginService = async (email, password) =>{
 
 //  update profile service
 export const updateService = async(data) =>{
-    console.log(data)
     const updateUser = await upadeteProfit(data)
+    delete updateUser.password
     return updateUser
+}
+// cloudinary and face detection business logic 
+export const cloudinaryService = async (file) =>{
+    const result = await uploadToCloudinary(file)
+    // console.log(result)
+    const facesDetected = result.faces ||[]
+    const faceCount = facesDetected.length
+    if(faceCount ===0){
+        await cloudinary.uploader.destroy(result.public_id)
+        throw new Error("Verification failed: No human face detected. Please upload a clear photo of yourself.")
+    }
+    if(faceCount>1){
+        await cloudinary.uploader.destroy(result.public_id)
+        throw new Error(`Verification failed: Detected ${faceCount} faces. LinkUp profiles only allow single-person photos.`)
+    }
+
+    return result
+}
+//  upload profile image business logic
+export const uploadProfileImageService = async(data)=>{
+    const image = await uploadProfilePic(data)
+    delete image.password
+    return image
 }

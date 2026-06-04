@@ -1,4 +1,6 @@
 import { prisma } from "../config/db.js";
+import { getPublicIdFromUrl } from "../utils/urlhelper.js";
+import {deleteImageFromCloudinary} from "../services/cloudinaryService.js"
 export const findUserByEmail = async(email) =>{
     const checkUser =await prisma.user.findUnique({
         where:{
@@ -40,7 +42,37 @@ export const upadeteProfit = async(data) =>{
             skills:data.skills,
             city:data.city,
             profileCompleted:false,
-            profileImage:null
         }
     })
 } 
+//  insert profile image
+export const uploadProfilePic = async (data) =>{
+    // get user profile picture if exist
+
+   const existsPic = await prisma.user.findUnique({
+    where:{
+        id:data.id
+    },
+    select:{profileImage:true}
+   })
+   if(existsPic && existsPic.profileImage){
+    const oldPictureUrl = await getPublicIdFromUrl(existsPic.profileImage)
+    if(oldPictureUrl){
+        await deleteImageFromCloudinary(oldPictureUrl)
+    }
+   }
+
+//    insert image into the database
+    const image = await prisma.user.update({
+        where:{
+            id :data.id
+        },
+        data:{
+            profileImage:data.imageUrl,
+            profileCompleted:true
+        }
+    })
+    return image
+}
+
+
