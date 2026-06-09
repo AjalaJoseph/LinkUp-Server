@@ -26,7 +26,7 @@ const upload =multer({
 })
 
 export const uploadImageGuard = (req, res, next) =>{
-    upload.single("profile_image")(req, res, (err)=>{
+    upload.single("image")(req, res, (err)=>{
          if (err) {
             return res.status(400).json({
                 status: "fail",

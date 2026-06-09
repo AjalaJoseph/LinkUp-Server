@@ -47,6 +47,11 @@ enum ResponseStatus {
   ACCEPTED
   REJECTED
 }
+enum HelpType {
+  PHYSICAL
+  VIRTUAL
+  ANY
+}
 model Post {
   id            String   @id @default(cuid())
 
@@ -58,9 +63,9 @@ model Post {
 
   image         String?
 
-  tag           String
+  tag           Json
   category      String?
-
+  helpType      HelpType @default(ANY)
   country       String?
   state         String?
   city         String?

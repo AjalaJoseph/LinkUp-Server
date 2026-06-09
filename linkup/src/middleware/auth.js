@@ -21,7 +21,7 @@ dotenv.config()
 export const verifyRefreshToken =async (req, res, next) =>{
     const { refreshToken} = req.cookies
     if(!refreshToken){
-        return res.status(401).json({status:"fail", message:"Rfresh token is missing"})
+        return res.status(401).json({status:"fail", message:"Refresh token is missing"})
     }
 
     const decode = jwt.verify(refreshToken, process.env.REFRESH_SECRET)

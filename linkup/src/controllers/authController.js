@@ -1,6 +1,14 @@
-import { registerUser, loginService,updateService, uploadProfileImageService, cloudinaryService } from "../services/authService.js";
+import { registerUser, 
+    loginService,
+    updateService,
+     uploadProfileImageService, 
+     cloudinaryService,
+    changePasswordService } from "../services/authService.js";
 import { uploadToCloudinary } from "../services/cloudinaryService.js"
 import {generateAccessToken} from '../utils/generateToken.js'
+import { redis } from "../config/redis.js";
+import dotenv from 'dotenv'
+dotenv.config()
 export const registerController = async(req, res) =>{
     try{
         const {name, email, password} = req.body
@@ -36,7 +44,8 @@ export const loginController = async (req, res) =>{
         res.cookie('refreshToken', loginUser.refreshToken, {
                 httpOnly: true,
                 sameSite: 'Strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+                maxAge: 7 * 24 * 60 * 60 * 1000 ,// 7 days in milliseconds
+                secure: process.env.NODE_ENV === 'production' 
             })
         res.status(201).json({
             status:"success",
@@ -52,7 +61,7 @@ export const loginController = async (req, res) =>{
         // res.cookie("refreshToken", )
     }
     catch(error){
-        return res.status(400).json({
+        return res.status(401).json({
             status:"fail",
             error: error.message
         })
@@ -126,6 +135,46 @@ export const refreshTokenController = async(req, res)=>{
         });
     }
     catch(error){
-        return res.status(400).json({status:"fail", message:error.message})
+        return res.status(500).json({status:"fail", message:error.message})
+    }
+}
+
+//  logout controller
+export const logoutController = async (req, res) =>{
+    try{
+        const {id} = req.user
+        await redis.del(`refresh:${id}`)
+       res.clearCookie('refreshToken', {
+            httpOnly: true,
+            sameSite: 'strict'
+        });
+        return res.status(200).json({
+            status: "success",
+            message: "Logged out successfully"
+        });
+    }
+    catch(error){
+         res.clearCookie('refreshToken', {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
+        });
+        return res.status(401).json({status:"fail", message:error.message})
+    }
+}
+
+//  change password controller 
+export const changePasswordController = async (req, res) =>{
+    try{
+        const id = req.user.id
+        const {old_password, new_password} = req.body
+        await changePasswordService(id,old_password, new_password)
+        return res.status(200).json({status:"success", message:"password updated sucessfully"})
+    }
+    catch(error){
+        return res.status(400).json({ 
+            status: "fail", 
+            message: error.message || "Failed to update password" 
+        });
     }
 }

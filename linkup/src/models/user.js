@@ -11,7 +11,7 @@ export const findUserByEmail = async(email) =>{
 }
 //  find user by id
 export const findUserById = async(id) =>{
-    const find = await prisma.findUnique({
+    const find = await prisma.user.findUnique({
         where:{
             id:id
         }
@@ -75,4 +75,15 @@ export const uploadProfilePic = async (data) =>{
     return image
 }
 
-
+// change password model
+export const changePassword = async (id, newPassword)=>{
+    const updatePassword = await prisma.user.update({
+        where:{
+            id: id
+        },
+        data:{
+            password:newPassword
+        }
+    })
+    return updatePassword
+}

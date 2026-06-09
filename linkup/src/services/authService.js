@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { findUserByEmail, createUser,upadeteProfit, uploadProfilePic,  } from '../models/user.js'
+import { findUserByEmail, createUser,upadeteProfit, uploadProfilePic, changePassword, findUserById  } from '../models/user.js'
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js'
 import { redis } from '../config/redis.js'  
 import { uploadToCloudinary, deleteImageFromCloudinary } from './cloudinaryService.js'
@@ -73,4 +73,17 @@ export const uploadProfileImageService = async(data)=>{
     const image = await uploadProfilePic(data)
     delete image.password
     return image
+}
+
+//  change password business logic
+export const changePasswordService = async (id,oldPassword, newPassword) =>{
+    const getUser = await findUserById(id)
+    const comparePassword = await bcrypt.compare(oldPassword, getUser.password)
+    if(!comparePassword){
+        throw new Error('old password not correct enter correct password')
+    }
+    const hashNewPassword = await bcrypt.hash(newPassword, 10)
+    const passwordUpdate = await changePassword(id, hashNewPassword)
+    delete passwordUpdate.password
+    return passwordUpdate
 }

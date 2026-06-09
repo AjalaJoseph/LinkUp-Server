@@ -1,10 +1,24 @@
 import express from 'express'
-import { registerController, loginController, updateProfitController, uploadProfileImageController } from '../controllers/authController.js'
-import { registerValidator, validateRegisterInput, loginValidator, validateLoginInput, updateProfileValidator } from '../validator/authValidator.js'
+import { 
+    registerController,
+     loginController, 
+     updateProfitController, 
+     uploadProfileImageController, 
+     logoutController,
+    changePasswordController } from '../controllers/authController.js'
+import { 
+    registerValidator,
+     validateRegisterInput, 
+     loginValidator, 
+     validateLoginInput, 
+     updateProfileValidator,
+    changePasswordValidator } from '../validator/authValidator.js'
 import { verifyToken } from '../middleware/auth.js'
 import { uploadImageGuard } from '../middleware/imageMiddleware.js'
 export const router = express.Router()
 router.post('/register', registerValidator, validateRegisterInput, registerController)
 router.post('/login', loginValidator,validateLoginInput,loginController)
+router.post('/logout', verifyToken, logoutController )
 router.patch('/update-profile',verifyToken, updateProfileValidator, updateProfitController)
-router.patch('/upload-profile-image', verifyToken,uploadImageGuard,uploadProfileImageController)
+router.post('/upload-profile-image', verifyToken,uploadImageGuard,uploadProfileImageController)
+router.patch('/change-password',verifyToken, changePasswordValidator, changePasswordController)
