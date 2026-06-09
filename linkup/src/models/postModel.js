@@ -119,3 +119,43 @@ export const deletePost = async(postId, userId) =>{
     })
     return deleteSpecificPost
 }
+export const getSinglePost = async(postId) =>{
+    return await prisma.post.findUnique({
+        where:{
+            id:postId
+        },
+        include: { _count: { select: { responses: true } } }
+    })
+}
+// postResponse model
+export const postResponseModel = async (postId, userId) =>{
+    const createPostResponse = await prisma.postResponse.create({
+        data:{
+            postId:postId,
+            userId:userId
+        },
+        include: {
+            post: { select: { title: true } }
+        }
+    })
+    return createPostResponse
+}
+
+//  Get all responses for a post model
+export const getAllResponses = async (postId) =>{
+    const responses = await prisma.postResponse.findMany({
+          where: { postId: postId },
+        orderBy: { createdAt: 'desc' }, // Newest applicants show first
+        include: {
+            user: { // Joint query to pull down the applicant's details natively
+                select: {
+                    id: true,
+                    name: true,
+                    profileImage: true,
+                    bio: true
+                }
+            }
+        }
+    })
+    return responses
+}

@@ -1,4 +1,12 @@
-import { createPost, getUserPost, getPersonalizedFeedService, closePostModel, deletePost } from "../models/postModel.js";
+import { prisma } from "../config/db.js";
+import { createPost, 
+    getUserPost, 
+    getPersonalizedFeedService, 
+    closePostModel, 
+    deletePost, 
+    postResponseModel,
+    getSinglePost,
+    getAllResponses } from "../models/postModel.js";
 export const createPostService = async (data) =>{
     const insertPost = await createPost(data)
     return insertPost
@@ -57,4 +65,39 @@ export const closePostService = async (postId, userId) =>{
 //   delete post service
 export const deletePostService = async (postId, userId) =>{
     return await deletePost(postId, userId)
+}
+
+//  getsingle post service
+export const getSinglePostService = async (postId) =>{
+    const postExist = await getSinglePost(postId)
+    if(!postExist){
+        throw new Error("This help request no longer exists");
+    }
+     if (postExist.isClosed ===true) {
+        throw new Error("This help request has already been closed and resolved");
+     }
+
+     if (postExist._count.responses >= postExist.maxApplicants) {
+        throw new Error("Application limit reached! This post cannot accept any more responders");
+    }
+    return postExist
+}
+export const PostResponseService = async (postId, userId) =>{
+    return await postResponseModel(postId, userId)
+}
+
+//  get all responses service
+export const getAllPostResponses = async(postId, userId) =>{
+     const postExist = await getSinglePost(postId)
+    if(!postExist){
+        throw new Error("Target help request not found");
+    }
+      if (postExist.userId !== userId) {
+        throw new Error("Unauthorized: You can only view applications for posts created by your account");
+    }
+    const responses = await getAllResponses(postId)
+    return {
+        postTitle:postExist.title,
+        responses:responses
+    }
 }

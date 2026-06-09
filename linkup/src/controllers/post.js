@@ -1,6 +1,14 @@
-import { createPostService, getAllUserPostService,getSpecificPostService, closePostService, deletePostService } from "../services/post.js";
+import { createPostService, 
+    getAllUserPostService,
+    getSpecificPostService, 
+    closePostService, 
+    deletePostService,
+    PostResponseService,
+    getSinglePostService,
+    getAllPostResponses } from "../services/post.js";
 import { getUserDataService } from "../services/getUserService.js";
 import { uploadToCloudinary } from "../services/postToCloudinary.js";
+import { getSinglePost } from "../models/postModel.js";
 export const postcontroller = async ( req, res) =>{
     try{
         // const {file} = req.file
@@ -132,3 +140,53 @@ export const deletePostController = async (req, res) => {
         });
     }
 };
+
+// postResponse controller
+export const postResponseController = async(req,res) =>{
+    try{
+        const userId = req.user.id
+    const { postId} = req.params
+    const post = await getSinglePostService(postId)
+    const postResponse = await PostResponseService(postId, userId)
+    return res.status(200).json({
+        status: "success",
+        message: `Your offer to help with "${postResponse.post.title}" has been submitted!`,
+        data: postResponse
+    })
+    }
+    catch (error) {
+        console.error("Response transaction failure:", error.message);
+        let statusCode = 400;
+        if (error.message.includes("limit reached") ){
+            statusCode = 403;
+        } 
+        return res.status(statusCode).json({ status: "fail", message: error.message });
+    }
+}
+
+//  get all post responses controller 
+export const getPostResponseController = async(req,res) =>{
+    try{
+        const userId = req.user.id
+        const { postId} = req.params
+        
+         const result = await getAllPostResponses(postId, userId);
+        return res.status(200).json({
+            status: "success",
+            message: `Successfully retrieved applicants for "${result.postTitle}"`,
+            results: result.responses.length,
+            data: result.responses
+        });
+    }catch (error) {
+        console.error("Fetch responses error:", error.message);
+        
+        let statusCode = 500;
+        if (error.message.includes("Unauthorized")) statusCode = 403;
+        if (error.message.includes("not found")) statusCode = 404;
+
+        return res.status(statusCode).json({
+            status: "fail",
+            message: error.message || "Failed to retrieve applicants due to a server error."
+        });
+    }
+}
