@@ -7,9 +7,10 @@ import { registerUser,
 import { uploadToCloudinary } from "../services/cloudinaryService.js"
 import {generateAccessToken} from '../utils/generateToken.js'
 import { redis } from "../config/redis.js";
+import { logger } from "../utils/logger.js";
 import dotenv from 'dotenv'
 dotenv.config()
-export const registerController = async(req, res) =>{
+export const registerController = async(req, res, next) =>{
     try{
         const {name, email, password} = req.body
         const user ={
@@ -29,15 +30,12 @@ export const registerController = async(req, res) =>{
         })
     }
     catch(error){
-        return res.status(400).json({
-            status:"fail",
-            error:error.message
-        })
+        next(error)
     }
 }
 
 // login controller
-export const loginController = async (req, res) =>{
+export const loginController = async (req, res, next) =>{
     try{
         const {email, password} = req.body
         const loginUser = await loginService(email, password)
@@ -56,20 +54,17 @@ export const loginController = async (req, res) =>{
                 email:loginUser.userData.email,
                 profileComplited: loginUser.userData.profileCompleted
             },
-            token:loginUser.accessToken
+            accessToken:loginUser.accessToken
         })
         // res.cookie("refreshToken", )
     }
     catch(error){
-        return res.status(401).json({
-            status:"fail",
-            error: error.message
-        })
+        next(error)
     }
 }
 
 //  update profit controller
-export const updateProfitController = async(req, res) =>{
+export const updateProfitController = async(req, res, next) =>{
     try{
         const {state, city, bio, skills} = req.body
         const {id, email} = req.user
@@ -90,11 +85,11 @@ export const updateProfitController = async(req, res) =>{
         });
     }
     catch(error){
-        return res.status(400).json({ status: "fail", message: error.message || "Failed to update profile" });
+        next(error)
     }
 }
 //  profile picture image uploading controller
-export const uploadProfileImageController = async (req, res) =>{
+export const uploadProfileImageController = async (req, res, next) =>{
     try{
         const {id} = req.user
         const file = req.file
@@ -119,13 +114,12 @@ export const uploadProfileImageController = async (req, res) =>{
         });
     }
     catch (error) {
-        console.error("Upload controller operation error:", error);
-        return res.status(400).json({ status: "error", message: error.message || "Failed to upload image" });
+        next(error)
     }
 }
 
 //  refresh token controller
-export const refreshTokenController = async(req, res)=>{
+export const refreshTokenController = async(req, res, next)=>{
     try{
         const {id, email} =req.user
         const newAccessToken = await generateAccessToken(id, email)
@@ -135,12 +129,12 @@ export const refreshTokenController = async(req, res)=>{
         });
     }
     catch(error){
-        return res.status(500).json({status:"fail", message:error.message})
+        next(error)
     }
 }
 
 //  logout controller
-export const logoutController = async (req, res) =>{
+export const logoutController = async (req, res, next) =>{
     try{
         const {id} = req.user
         await redis.del(`refresh:${id}`)
@@ -159,12 +153,12 @@ export const logoutController = async (req, res) =>{
             sameSite: 'strict',
             secure: process.env.NODE_ENV === 'production'
         });
-        return res.status(401).json({status:"fail", message:error.message})
+        next(error)
     }
 }
 
 //  change password controller 
-export const changePasswordController = async (req, res) =>{
+export const changePasswordController = async (req, res, next) =>{
     try{
         const id = req.user.id
         const {old_password, new_password} = req.body
@@ -172,9 +166,6 @@ export const changePasswordController = async (req, res) =>{
         return res.status(200).json({status:"success", message:"password updated sucessfully"})
     }
     catch(error){
-        return res.status(400).json({ 
-            status: "fail", 
-            message: error.message || "Failed to update password" 
-        });
+        next(error)
     }
 }

@@ -6,23 +6,30 @@ import { createPost,
     deletePost, 
     postResponseModel,
     getSinglePost,
-    getAllResponses } from "../models/postModel.js";
+    getAllResponses,
+     getSinglePostResponse,
+    acceptPostApplicantModel,
+    searchForPostModel
+     } from "../models/postModel.js";
+
+    //  create post businnes logic
 export const createPostService = async (data) =>{
     const insertPost = await createPost(data)
     return insertPost
 }
 
 //  get user all post service
-export const getAllUserPostService = async (userId) =>{
-    return await getUserPost(userId)
+export const getAllUserPostService = async (userId,page, limit) =>{
+    const myPosts = await getUserPost(userId, page, limit)
+    return myPosts
 }
+
 //  getPersonalizedFeedService business logic
  export const getSpecificPostService = async (userProfile) =>{
     
-    const posts = await getPersonalizedFeedService(userProfile.id)
-
-    if(posts){
-        const rankedPost = posts.map(post =>{
+    const postData = await getPersonalizedFeedService( userProfile.limit, userProfile.id,userProfile.cursor)
+    if(postData){
+        const rankedPost = postData.posts.map(post =>{
             let score = 0;
             //  rule one setting city as first priority
             if(post.city && userProfile.city && post.city.toLowerCase() === userProfile.city.toLowerCase()){
@@ -53,7 +60,11 @@ export const getAllUserPostService = async (userId) =>{
             }
             return data
         })
-        return rankedPost.sort((a, b) => b.matchscore - a.matchscore)
+        return {
+           data: rankedPost.sort((a, b) => b.matchscore - a.matchscore),
+            meta: postData.meta
+
+        }
     }
  }
 
@@ -71,14 +82,14 @@ export const deletePostService = async (postId, userId) =>{
 export const getSinglePostService = async (postId) =>{
     const postExist = await getSinglePost(postId)
     if(!postExist){
-        throw new Error("This help request no longer exists");
+        throw Object.assign(new Error("NOT FOUND :This help request no longer exists"), {statusCode:401});
     }
      if (postExist.isClosed ===true) {
-        throw new Error("This help request has already been closed and resolved");
+        throw Object.assign(new Error("This help request has already been closed and resolved"), {statusCode:403});
      }
 
      if (postExist._count.responses >= postExist.maxApplicants) {
-        throw new Error("Application limit reached! This post cannot accept any more responders");
+        throw Object.assign(new Error("Application limit reached! This post cannot accept any more responders"), {statusCode:404});
     }
     return postExist
 }
@@ -90,14 +101,41 @@ export const PostResponseService = async (postId, userId) =>{
 export const getAllPostResponses = async(postId, userId) =>{
      const postExist = await getSinglePost(postId)
     if(!postExist){
-        throw new Error("Target help request not found");
+        throw Object.assign(new Error("Target help request not found"), {statusCode:401});
     }
       if (postExist.userId !== userId) {
-        throw new Error("Unauthorized: You can only view applications for posts created by your account");
+        throw Object.assign(new Error("Unauthorized: You can only view applications for posts created by your account"),{statusCode:404});
     }
     const responses = await getAllResponses(postId)
     return {
         postTitle:postExist.title,
         responses:responses
     }
+}
+
+//  handleApplicantStatusService
+export const handleApplicantStatusService = async(payload) =>{
+    const response = await getSinglePostResponse(payload.responseId)
+     if (!response) {
+        throw Object.assign(new Error("Application record not found"), {statusCode:401});
+    }
+
+    if (response.post.userId !== payload.userAId) {
+        throw Object.assign(new Error("Unauthorized: You can only review applicants on your own posts"), {statusCode:404});
+    }
+    const data = {
+        responseId:payload.responseId,
+        action:payload.action,
+        userAId:payload.userAId,
+        userBId:response.userId,
+        postId:response.postId
+    }
+    const handlePostResponseStatus = await acceptPostApplicantModel(data)
+    return handlePostResponseStatus
+}
+
+//  search for specific post service
+export const searchForPostService = async (userId, cursor, userInput) =>{
+    const search = await searchForPostModel(userId, cursor, userInput )
+    return search
 }

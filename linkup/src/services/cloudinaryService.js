@@ -30,7 +30,7 @@ export const  deleteImageFromCloudinary  = async (publicId) =>{
         return deleteImage
     }
     catch (error) {
-        throw new Error("Cloudinary file wiping failed:", error)
+        throw Object.assign(new Error("Cloudinary file wiping failed:", error), {statusCode:500})
         return null
     }
 }

@@ -5,11 +5,14 @@ import { createPostService,
     deletePostService,
     PostResponseService,
     getSinglePostService,
-    getAllPostResponses } from "../services/post.js";
+    getAllPostResponses,
+    handleApplicantStatusService,
+    searchForPostService
+     } from "../services/post.js";
 import { getUserDataService } from "../services/getUserService.js";
 import { uploadToCloudinary } from "../services/postToCloudinary.js";
-import { getSinglePost } from "../models/postModel.js";
-export const postcontroller = async ( req, res) =>{
+import { getSinglePost ,getAllMyApplicant} from "../models/postModel.js";
+export const postcontroller = async ( req, res, next) =>{
     try{
         // const {file} = req.file
     const {id} = req.user
@@ -42,20 +45,19 @@ export const postcontroller = async ( req, res) =>{
         });
     }
     catch(error){
-         return res.status(500).json({
-            status: "error",
-            message: error.message || "Failed to publish your post. Server error."
-        });
+        next(error)
     }
    
 }
 
 //  get all user post controller
 
-export const getUserPostController = async (req, res) =>{
+export const getUserPostController = async (req, res, next) =>{
     try{
         const { id} = req.user
-        const myPosts = await getAllUserPostService(id)
+       const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit, 10) || 10);
+        const myPosts = await getAllUserPostService(id, page, limit)
          return res.status(200).json({
             status: "success",
             results: myPosts.length,
@@ -63,38 +65,40 @@ export const getUserPostController = async (req, res) =>{
         });
     }
     catch(error){
-        return res.status(500).json({ status: "error", message: error.message });
+        next(error)
     }
 }
 
 // 
-export const  getPersonalizedFeedController = async (req, res) =>{
+export const  getPersonalizedFeedController = async (req, res, next) =>{
     try{
         const { id } = req.user
-
+         const limit = parseInt(req.query.limit, 10) || 20;
+        const cursor = req.query.cursor || null;
         const user = await getUserDataService(id)
         const userProfile = {
             id:id,
             city: user.city,
             state:user.state,
-            skills:user.skills
+            skills:user.skills,
+            limit:limit,
+            cursor:cursor
         }
         const postData = await getSpecificPostService(userProfile)
          return res.status(200).json({
             status: "success",
-            results: postData.length,
+            results: postData.data.length,
             data: postData
         });
     }
     catch (error) {
-        console.error("LinkUp Smart Feed Engine Error:", error.message);
-        return res.status(500).json({ status: "error", message: "Failed to generate personalized social feed" });
+        next(error)
     }
 }
 
 //  closePost controller
 
-export const closePostController = async(req, res) =>{
+export const closePostController = async(req, res, next) =>{
     try{
         const userId = req.user.id
     const { postId} = req.params
@@ -106,16 +110,11 @@ export const closePostController = async(req, res) =>{
      })
     }
     catch (error) {
-        console.error("Close post error:", error.message);
-        let statusCode = 500;
-        if (error.message.includes("Unauthorized")) statusCode = 403;
-        if (error.message.includes("not found")) statusCode = 404;
-
-        return res.status(statusCode).json({ status: "fail", message: error.message });
+       next(error)
     }
 }
 
-export const deletePostController = async (req, res) => {
+export const deletePostController = async (req, res, next) => {
     try {
         const userId = req.user.id;   // Securely pulled from your access token guard
         const { postId } = req.params; // Extracted dynamically from the URL path parameter
@@ -128,21 +127,12 @@ export const deletePostController = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Delete post process error:", error.message);
-        
-        let statusCode = 500;
-        if (error.message.includes("Unauthorized")) statusCode = 403;
-        if (error.message.includes("not found")) statusCode = 404;
-
-        return res.status(statusCode).json({
-            status: "fail",
-            message: error.message || "Failed to delete post."
-        });
+        next(error)
     }
 };
 
 // postResponse controller
-export const postResponseController = async(req,res) =>{
+export const postResponseController = async(req, res, next) =>{
     try{
         const userId = req.user.id
     const { postId} = req.params
@@ -155,17 +145,12 @@ export const postResponseController = async(req,res) =>{
     })
     }
     catch (error) {
-        console.error("Response transaction failure:", error.message);
-        let statusCode = 400;
-        if (error.message.includes("limit reached") ){
-            statusCode = 403;
-        } 
-        return res.status(statusCode).json({ status: "fail", message: error.message });
+        next(error)
     }
 }
 
 //  get all post responses controller 
-export const getPostResponseController = async(req,res) =>{
+export const getPostResponseController = async(req,res, next) =>{
     try{
         const userId = req.user.id
         const { postId} = req.params
@@ -178,15 +163,76 @@ export const getPostResponseController = async(req,res) =>{
             data: result.responses
         });
     }catch (error) {
-        console.error("Fetch responses error:", error.message);
-        
-        let statusCode = 500;
-        if (error.message.includes("Unauthorized")) statusCode = 403;
-        if (error.message.includes("not found")) statusCode = 404;
+       next(error)
+    }
+}
 
-        return res.status(statusCode).json({
-            status: "fail",
-            message: error.message || "Failed to retrieve applicants due to a server error."
+// reviewApplicantController
+export const reviewApplicantController = async (req, res, next) => {
+    try{
+        const userAId = req.user.id
+        const {responseId} = req.params
+        const {action} = req.body
+        if (!action || !['ACCEPTED', 'REJECTED'].includes(action)) {
+            return res.status(400).json({ 
+                status: "fail", 
+                message: "Invalid action. Please specify 'ACCEPTED' or 'REJECTED' in uppercase." 
+            });
+        }
+        const payload= {
+            responseId:responseId,
+            action:action,
+            userAId:userAId
+        }
+         const updatedApplication = await handleApplicantStatusService(payload);
+
+        const customMessage = action === 'ACCEPTED' 
+            ? "Applicant accepted! A secure chat channel has been unlocked."
+            : "Applicant has been successfully declined.";
+
+        return res.status(200).json({
+            status: "success",
+            message: customMessage,
+            data: updatedApplication
         });
+    } catch (error) {
+        next(error)
+    }
+}
+
+//  get all applicant 
+export const getAllMyApplicantController = async (req, res, next) =>{
+    try{
+        const userId = req.user.id
+       const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit, 10) || 10);
+        const applicant = await getAllMyApplicant(userId, page,limit)
+        return res.status(200).json({
+            status:"succes",
+            message:"Application retrieve successfully",
+            result:applicant.length,
+            data:applicant
+        })
+    }catch(error){
+       next(error)
+    }
+}
+
+//  search for specific post controller 
+export const searchForPostController = async (req, res, next) =>{
+    try{
+        const userId = req.user.id
+        const cursor = req.query.cursor || null;
+         const userInput = req.query.query || ""; 
+        const result = await searchForPostService(userId, cursor, userInput)
+         return res.status(200).json({
+            status: "success",
+            result: result.posts.length,
+            data: result.posts,
+            meta: result.meta
+        });
+
+    }catch(error){
+        next(error)
     }
 }

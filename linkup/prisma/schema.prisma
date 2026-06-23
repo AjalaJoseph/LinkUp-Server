@@ -19,6 +19,7 @@ model User {
 
   name               String
   email              String   @unique
+  role                String @default("user")
   password           String
 
   bio                String?
@@ -77,6 +78,8 @@ model Post {
 
   responses     PostResponse[]
   conversations Conversation[]
+  @@index([userId])
+  @@index([isClosed, createdAt(sort: Desc)])
 }
 model PostResponse {
   id         String         @id @default(cuid())
@@ -90,6 +93,8 @@ model PostResponse {
   status     ResponseStatus @default(PENDING)
 
   createdAt  DateTime       @default(now())
+  @@index([userId])
+  @@index([postId])
 }
 model Conversation {
   id             String   @id @default(cuid())
@@ -102,10 +107,15 @@ model Conversation {
 
   userBId        String
   userB          User     @relation("UserB", fields: [userBId], references: [id])
+  lastMessageText String?
+  lastMessageAt DateTime? 
 
   createdAt      DateTime @default(now())
 
   messages       Message[]
+  @@index([userAId, lastMessageAt(sort: Desc)])
+  @@index([userBId, lastMessageAt(sort: Desc)])
+  @@index([postId])
 }
 model Message {
   id              String        @id @default(cuid())
@@ -119,6 +129,8 @@ model Message {
   text            String?
 
   isRead          Boolean       @default(false)
-
+  isDelete        Boolean       @default(false)
   createdAt       DateTime      @default(now())
+  @@index([conversationId, createdAt(sort: Asc)])
+   @@index([conversationId, senderId, isRead])
 }

@@ -8,11 +8,8 @@ export const registerUser = async(user) =>{
     const email = user.email
     const userExist = await findUserByEmail(email)
     if(userExist){
-        throw new Error('Email already exists')
+        throw Object.assign(new Error('Email already exists'),{statusCode:400})
     }
-
-    // hash password
-    
     const hashPassword = await bcrypt.hash(user.password, 10)
     const name = await user.name
     const data ={
@@ -28,11 +25,11 @@ export const registerUser = async(user) =>{
 export const loginService = async (email, password) =>{
     const userData = await findUserByEmail(email)
     if(!userData){
-        throw new Error('user not found')
+        throw Object.assign(new Error('user not found'), { statusCode: 404 })
     }
     const isPassworMatch = await bcrypt.compare(password, userData.password)
     if(!isPassworMatch){
-        throw new Error('Invalid credentials')
+        throw Object.assign(new Error('Invalid credentials'), {statusCode:400})
     }
     const accessToken = await generateAccessToken(userData.id, userData.email)
     const refreshToken = await generateRefreshToken(userData.id, userData.email)
@@ -59,11 +56,11 @@ export const cloudinaryService = async (file) =>{
     const faceCount = facesDetected.length
     if(faceCount ===0){
         await cloudinary.uploader.destroy(result.public_id)
-        throw new Error("Verification failed: No human face detected. Please upload a clear photo of yourself.")
+        throw Object.assign(new Error("Verification failed: No human face detected. Please upload a clear photo of yourself."), {statusCode:400})
     }
     if(faceCount>1){
         await cloudinary.uploader.destroy(result.public_id)
-        throw new Error(`Verification failed: Detected ${faceCount} faces. LinkUp profiles only allow single-person photos.`)
+        throw Object.assign(new Error(`Verification failed: Detected ${faceCount} faces. LinkUp profiles only allow single-person photos.`), {statusCode:401})
     }
 
     return result
@@ -80,7 +77,7 @@ export const changePasswordService = async (id,oldPassword, newPassword) =>{
     const getUser = await findUserById(id)
     const comparePassword = await bcrypt.compare(oldPassword, getUser.password)
     if(!comparePassword){
-        throw new Error('old password not correct enter correct password')
+        throw Object.assign(new Error('old password not correct enter correct password'),{statusCode:400})
     }
     const hashNewPassword = await bcrypt.hash(newPassword, 10)
     const passwordUpdate = await changePassword(id, hashNewPassword)
