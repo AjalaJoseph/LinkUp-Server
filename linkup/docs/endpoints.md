@@ -552,7 +552,7 @@ Send any message to request owner or request owner send message to accepted appl
 ```
 ### Refresh Token
 Regenerate another access token once it expired
-* **Method & Route**: `GET /api/refresh-token`
+* **Method & Route**: `POST /api/refresh-token`
 * **Header**: 
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
