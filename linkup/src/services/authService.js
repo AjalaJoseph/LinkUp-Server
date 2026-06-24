@@ -8,7 +8,7 @@ export const registerUser = async(user) =>{
     const email = user.email
     const userExist = await findUserByEmail(email)
     if(userExist){
-        throw Object.assign(new Error('Email already exists'),{statusCode:400})
+        throw Object.assign(new Error('Email already exists'),{statusCode:409})
     }
     const hashPassword = await bcrypt.hash(user.password, 10)
     const name = await user.name

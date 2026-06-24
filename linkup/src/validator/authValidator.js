@@ -21,10 +21,10 @@ export const registerValidator = [
 export const validateRegisterInput =(req, res, next) =>{
     const error = validationResult(req)
     if(!error.isEmpty()){
-        const errorMessage = error.array().map(err => err.msg)
+        const errorMessage = error.array()[0].msg
         return res.status(400).json({
-            success:false,
-            error:errorMessage
+            status:"fail",
+            message:errorMessage
         })
     }
     return next()
@@ -45,10 +45,10 @@ export const loginValidator = [
 export const validateLoginInput = (req, res, next) =>{
     const error = validationResult(req)
     if(!error.isEmpty()){
-        const errorMessage = error.array().map(err => err.msg)
+        const errorMessage = error.array()[0].msg
         return res.status(400).json({
             status:"fail",
-            errors:errorMessage
+            message:errorMessage
         })
     }
     return next()
@@ -74,10 +74,10 @@ export const updateProfileValidator = [
     (req, res, next) =>{
         const errors = validationResult(req)
         if(!errors.isEmpty()){
-            const errorMessage = errors.array().map(err =>err.msg)
+            const errorMessage = errors.array()[0].msg
             return res.status(400).json({
                 status:"fail",
-                errors:errorMessage
+                message:errorMessage
             })
         } 
         return next()
@@ -100,7 +100,7 @@ export const changePasswordValidator = [
             const errorMessage = errors.array()[0].msg
             return res.status(400).json({
                 status:"fail",
-                errors:errorMessage
+                message:errorMessage
             })
         } 
         return next()
