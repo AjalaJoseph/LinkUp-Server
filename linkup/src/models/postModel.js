@@ -53,7 +53,7 @@ export const getUserPost = async (userId, page, limit) =>{
     })
      return {
         myPosts,
-        meta: {
+        pagination: {
             totalItems: totalPosts,
             totalPages: totalPages,
             currentPage: page,
@@ -96,7 +96,7 @@ export const getPersonalizedFeedService = async (limit,userId, cursor) =>{
     const nextCursor = hasNextPage ? paginatedPosts[paginatedPosts.length - 1].id : null;
     return {
         posts: paginatedPosts,
-        meta: {
+        pagination: {
             nextCursor,
             hasNextPage
         }
@@ -294,7 +294,7 @@ export const getAllMyApplicant = async (userId, page, limit) =>{
     })
     return {
         myApplication,
-        meta: {
+        pagination: {
             totalItems: totalPostsApplie,
             totalPages: totalPages,
             currentPage: page,

@@ -16,7 +16,7 @@ Depending on your runtime compilation environment, target your networking engine
 * **Content-Type**: `application/json` must be passed in the headers of all writing requests.
 * **Authorization Protocol**: Protected routes require an asymmetric JSON Web Token (JWT) passed via the standard HTTP Authorization header:
   ```text
-  Authorization: Bearer <YOUR_JWT_TOKEN>
+  Authorization: Bearer <ACCESS_TOKEN>
   ```
 
 ---
@@ -227,3 +227,110 @@ if any input field is empty it we throw a field is required error
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
   ```
+ ---
+
+## 📝 2. Posts & Feed Interface (`/api/posts`)
+
+### A. Create a New Post
+Creates a new service or help post entry in the database. 
+* **Method & Route**: `POST /api/posts/upload-post`
+* **Content-Type**: `multipart/form-data` *(Required if attaching an image file via Multer)*
+* **File Key**: `image` (Optional, allowed formats: `.jpg`, `.jpeg`, `.png`, `.img`)
+* **Header**: 
+```text
+  Authorization: Bearer <ACCESS_TOKEN>
+  ```
+
+**Required Request Body Fields (JSON/Form representation):**
+* `title` (**Required**, String) — Title of the post.
+* `description` (**Required**, String) — Detailed breakdown of the task or job.
+* `state` (**Required**, String) — State where the post applies.
+* `city` (**Required**, String) — City where the post applies.
+* `category` (**Required**, String) — The domain category (e.g., "Tech", "Education").
+* `helpType` (**Required**, Enum) — Must match either `"VIRTUAL"` or `"PHYSICAL"`.
+* `maxApplicant` (**Required**, Integer) — Maximum number of users allowed to apply before the post locks.
+* `tags` (**Required**, Array of Strings) — Key tags related to the post (e.g., `["remote", "developer"]`).
+* `country` (*Optional*, String) — Country location parameter (Defaults to home country if omitted).
+
+**Example Conceptual Request Payload Snapshot:**
+```json
+{
+  "title": "Need Urgent Math Tutor",
+  "description": "Looking for an experienced tutor to help with high school calculus preparations.",
+  "state": "Lagos",
+  "city": "Ikeja",
+  "category": "Education",
+  "helpType": "PHYSICAL",
+  "maxApplicant": 5,
+  "tags": ["tutor", "calculus", "math"],
+  "country": "Nigeria",
+  "image": "[Binary Image File Upload]"
+}
+```
+
+**✅ Success Response (`201 Created`):**
+```json
+{
+  "status": "success",
+  "message": "Post created and published successfully.",
+  "data": {
+    "id": "cmq4p5fsz0008w2eovc4y522b",
+    "title": "Need Urgent Math Tutor",
+    "description": "Looking for an experienced tutor to help with high school calculus preparations.",
+    "state": "Lagos",
+    "city": "Ikeja",
+    "country": "Nigeria",
+    "category": "Education",
+    "helpType": "PHYSICAL",
+    "maxApplicant": 5,
+    "tags": ["tutor", "calculus", "math"],
+    "image": "https://cloudinary.com",
+    "userId": "user_cmq123xyz",
+    "isClosed": false,
+    "createdAt": "2026-06-24T04:23:00.000Z"
+  }
+}
+```
+---
+### B. Get user personal post
+Retrieves a list of all posts created exclusively by the currently authenticated user using classic row-skipping pagination.
+* **Method & Route**: `GET /api/posts/my-posts`
+* **Header**: 
+```text
+  Authorization: Bearer <ACCESS_TOKEN>
+  ```
+* **URL Query Parameters**:
+  * `page` (*Optional*, Integer, Default: `1`): The specific page number block to retrieve.
+  * `limit` (*Optional*, Integer, Default: `20`): Maximum records per request page.
+
+**Example Request URL**: `http://localhost:5000/api/posts/my-posts?page=2&limit=10`
+
+**✅ Success Response (`200 OK`):**
+```json
+{
+  "status": "success",
+  "result": 1,
+  "data": [ ... ],
+  "pagination": {
+    "totalItems": 1,
+    "totalPages": 1,
+    "currentPage": 1,
+    "limit": 10,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
+---
+### C. Retrieve login user all applicant
+Retrieves a list of all posts  currently authenticated user have applied for using classic row-skipping pagination.
+* **Method & Route**: `GET /api/posts/my-applicants`
+* **Header**: 
+```text
+  Authorization: Bearer <ACCESS_TOKEN>
+  ```
+* **URL Query Parameters**:
+  * `page` (*Optional*, Integer, Default: `1`): The specific page number block to retrieve.
+  * `limit` (*Optional*, Integer, Default: `20`): Maximum records per request page.
+
+**Example Request URL**: `http://localhost:5000/api/posts/my-applicants?page=2&limit=10`

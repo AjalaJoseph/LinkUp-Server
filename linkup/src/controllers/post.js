@@ -40,7 +40,7 @@ export const postcontroller = async ( req, res, next) =>{
 
      return res.status(201).json({
             status: "success",
-            message: "Post published to LinkUp feed successfully!",
+            message: "Post created and published successfully.",
             data: newPost
         });
     }
@@ -60,7 +60,7 @@ export const getUserPostController = async (req, res, next) =>{
         const myPosts = await getAllUserPostService(id, page, limit)
          return res.status(200).json({
             status: "success",
-            results: myPosts.length,
+            results: myPosts.myPosts.length,
             data: myPosts
         });
     }

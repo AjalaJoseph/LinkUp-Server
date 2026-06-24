@@ -15,9 +15,9 @@ import { postcontroller,
  } from '../controllers/post.js'
 export const postRouter = express.Router()
 postRouter.post('/upload-post', verifyToken, uploadImageGuard, postValidator, postcontroller)
-postRouter.get('/my-post', verifyToken, getUserPostController)
-postRouter.get('/all-post',verifyToken, getPersonalizedFeedController)
-postRouter.get('/my-applicant', verifyToken, getAllMyApplicantController)
+postRouter.get('/my-posts', verifyToken, getUserPostController)
+postRouter.get('/all-posts',verifyToken, getPersonalizedFeedController)
+postRouter.get('/my-applicants', verifyToken, getAllMyApplicantController)
 postRouter.patch('/:postId/close', verifyToken, closePostController)
 postRouter.delete('/:postId/remove-post', verifyToken, deletePostController)
 postRouter.post('/:postId/applie', verifyToken, postResponseController)
