@@ -61,7 +61,8 @@ export const getUserPostController = async (req, res, next) =>{
          return res.status(200).json({
             status: "success",
             results: myPosts.myPosts.length,
-            data: myPosts
+            data: myPosts.myPosts,
+            pagination:myPosts.pagination
         });
     }
     catch(error){
@@ -88,7 +89,9 @@ export const  getPersonalizedFeedController = async (req, res, next) =>{
          return res.status(200).json({
             status: "success",
             results: postData.data.length,
-            data: postData
+            data: postData.data,
+            pagination:postData.pagination
+            
         });
     }
     catch (error) {
@@ -161,6 +164,7 @@ export const getPostResponseController = async(req,res, next) =>{
             message: `Successfully retrieved applicants for "${result.postTitle}"`,
             results: result.responses.length,
             data: result.responses
+
         });
     }catch (error) {
        next(error)
@@ -208,10 +212,11 @@ export const getAllMyApplicantController = async (req, res, next) =>{
         const limit = Math.max(1, parseInt(req.query.limit, 10) || 10);
         const applicant = await getAllMyApplicant(userId, page,limit)
         return res.status(200).json({
-            status:"succes",
+            status:"success",
             message:"Application retrieve successfully",
-            result:applicant.length,
-            data:applicant
+            result:applicant.myApplication.length,
+            data:applicant.myApplication,
+            pagination:applicant.pagination
         })
     }catch(error){
        next(error)

@@ -20,9 +20,9 @@ postRouter.get('/all-posts',verifyToken, getPersonalizedFeedController)
 postRouter.get('/my-applicants', verifyToken, getAllMyApplicantController)
 postRouter.patch('/:postId/close', verifyToken, closePostController)
 postRouter.delete('/:postId/remove-post', verifyToken, deletePostController)
-postRouter.post('/:postId/applie', verifyToken, postResponseController)
+postRouter.post('/:postId/apply', verifyToken, postResponseController)
 postRouter.post('/:postId/responses', verifyToken, getPostResponseController)
 postRouter.patch('/responses/:responseId/review', verifyToken, reviewApplicantController);
-postRouter.get('/post-search', verifyToken, searchForPostController)
+postRouter.get('/search-post', verifyToken, searchForPostController)
 
 

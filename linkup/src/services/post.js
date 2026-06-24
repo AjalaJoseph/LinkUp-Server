@@ -62,7 +62,7 @@ export const getAllUserPostService = async (userId,page, limit) =>{
         })
         return {
            data: rankedPost.sort((a, b) => b.matchscore - a.matchscore),
-            meta: postData.meta
+            pagination: postData.pagination
 
         }
     }
