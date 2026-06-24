@@ -26,7 +26,10 @@ Depending on your runtime compilation environment, target your networking engine
 Creates a new profile on the network database.
 * **Method & Route**: `POST /api/auth/register`
 * **Idempotency**: Generate and send idempotency-key from client side to prevent double clicking.
-
+* **Headers**
+```text
+Idempotency-key : Generate and add idempotency-key
+```
 **Request Body JSON:**
 ```json
 {
@@ -239,6 +242,7 @@ Creates a new service or help post entry in the database.
 * **Header**: 
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
+  Idempotency-key : Generate and add idempotency-key
   ```
 
 **Required Request Body Fields (JSON/Form representation):**
@@ -401,6 +405,7 @@ Retrieves a list of all posts  currently authenticated user have applied for usi
 * **Header**: 
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
+  Idempotency-key : Generate and add idempotency-key
   ```
 **Example Request URL**: `/api/posts/cmq4p0j8g00..../close`  
 
@@ -419,6 +424,7 @@ Retrieves a list of all posts  currently authenticated user have applied for usi
 * **Header**: 
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
+  Idempotency-key : Generate and add idempotency-key
   ```
 **Example Request URL**: `/api/posts/cmq4p0j8g00..../apply`  
 
@@ -430,7 +436,7 @@ Retrieves a list of all posts  currently authenticated user have applied for usi
   "data":{...}
 }
 ```
-### H. Request owner view all applican 
+### H. Request owner view all applicant 
 * **Method & Route**: `POST /api/posts/:postId/responses`
 * **Header**: 
 ```text
@@ -453,6 +459,7 @@ Retrieves a list of all posts  currently authenticated user have applied for usi
 * **Header**: 
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
+  Idempotency-key : Generate and add idempotency-key
   ```
 **Example Request URL**: `/api/posts/responses/cmq4p0j8g00..../review`
 
