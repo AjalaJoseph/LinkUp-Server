@@ -20,7 +20,15 @@ export const createMessageService = async (conversationId, senderId, text) =>{
     const insertMessage = await createMessageModel(conversationId,senderId,text)
     return insertMessage
 }
-
+// get receiver id from conversationn table
+export const getReceiverId = async (conversationId, senderId)=>{
+    const conversation = await checkConversation(conversationId)
+    if (!conversationExist) {
+        throw Object.assign(new Error("Chat conversation room not found"), {statusCode:404});
+    }
+    const receiverId =senderId === conversation.userAId ? conversation.userBId : conversation.userAId;
+    return receiverId
+}
 //  get all conversation services
 
 export const getAllConversationService = async (userId, limit, cursor) =>{

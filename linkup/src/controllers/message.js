@@ -2,7 +2,9 @@ import {createMessageService,
     getAllConversationService,
     getConversationMessageService,
     getLatestMessageService,
-deleteMessageService } from "../services/message.js";
+deleteMessageService,
+getReceiverId } from "../services/message.js";
+import { getSocketIOInstance } from "../config/socketEngine.js";
 // send message controller
 export const sendMessageController = async (req, res, next) => {
     try {
@@ -13,8 +15,17 @@ export const sendMessageController = async (req, res, next) => {
             return res.status(400).json({ status: "fail", message: "conversationId and text content fields are required" });
         }
 
+        const receiverId = await getReceiverId(conversationId, senderId)
+        
         const newMessage = await createMessageService(conversationId, senderId, text);
-
+        const io = getSocketIOInstance()
+         io.to(receiverId).emit('receive_message', {
+            id: newMessage.id,
+            conversationId: newMessage.conversationId,
+            senderId: senderId,
+            text: text,
+            createdAt: newMessage.createdAt
+        });
         return res.status(201).json({
             status: "success",
             message: "Message delivered successfully",

@@ -11,7 +11,8 @@ import { createPostService,
      } from "../services/post.js";
 import { getUserDataService } from "../services/getUserService.js";
 import { uploadToCloudinary } from "../services/postToCloudinary.js";
-import { getSinglePost ,getAllMyApplicant} from "../models/postModel.js";
+import { getSinglePost ,getAllMyApplicant, getSinglePostResponse} from "../models/postModel.js";
+import { getSocketIOInstance } from "../config/socketEngine.js";
 export const postcontroller = async ( req, res, next) =>{
     try{
         // const {file} = req.file
@@ -37,7 +38,11 @@ export const postcontroller = async ( req, res, next) =>{
     }
     
     const newPost = await createPostService(postData)
-
+    const io = getSocketIOInstance()
+    io.emit('new_post_published', {
+            message: `A new ${helpType.toLowerCase()} post was just published in your area!`,
+            post: newPost
+        });
      return res.status(201).json({
             status: "success",
             message: "Post created and published successfully.",
@@ -141,6 +146,12 @@ export const postResponseController = async(req, res, next) =>{
     const { postId} = req.params
     const post = await getSinglePostService(postId)
     const postResponse = await PostResponseService(postId, userId)
+    const io = getSocketIOInstance()
+    io.to(post.userId).emit('new_responder_applied', {
+        postId:postId,
+        message: `user id ${req.user.id} has just applied to your post: "${post.title}"`,
+         data: postResponse
+    })
     return res.status(200).json({
         status: "success",
         message: `Your offer to help with "${postResponse.post.title}" has been submitted!`,
@@ -188,12 +199,18 @@ export const reviewApplicantController = async (req, res, next) => {
             action:action,
             userAId:userAId
         }
-         const updatedApplication = await handleApplicantStatusService(payload);
 
+         const updatedApplication = await handleApplicantStatusService(payload); 
         const customMessage = action === 'ACCEPTED' 
             ? "Applicant accepted! A secure chat channel has been unlocked."
             : "Applicant has been successfully declined.";
-
+              const appliedId = await getSinglePostResponse(responseId)
+             const io =  getSocketIOInstance()
+                io.to(appliedId.userId).emit('application_status_update', {
+                    postId: updatedApplication.postId,
+                    status: action,
+                    message:customMessage
+                })
         return res.status(200).json({
             status: "success",
             message: customMessage,

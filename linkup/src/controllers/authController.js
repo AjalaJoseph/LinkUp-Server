@@ -52,6 +52,7 @@ export const loginController = async (req, res, next) =>{
                 id:loginUser.userData.id,
                 name:loginUser.userData.name,
                 email:loginUser.userData.email,
+                role:loginUser.userData.role,
                 profileComplited: loginUser.userData.profileCompleted
             },
             accessToken:loginUser.accessToken

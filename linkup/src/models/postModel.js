@@ -243,13 +243,23 @@ export const acceptPostApplicantModel = async (payload)=>{
                 }
             })
         }
-
-        if (payload.action === "REJECTED") {
-            await tx.conversation.deleteMany({
+        const conversationToWipe = await tx.conversation.findFirst({
                 where: {
                    postId:payload.postId,
                     userAId:payload.userAId,
                     userBId:payload.userBId
+                },
+                select:{id:true}
+        })
+        if (payload.action === "REJECTED" && conversationToWipe) {
+              await tx.message.deleteMany({
+                where:{
+                    conversationId:conversationToWipe.id
+                }
+            })
+            await tx.conversation.delete({
+                where: {
+                  id:conversationToWipe.id
                 }
             });
         }

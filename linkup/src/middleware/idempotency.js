@@ -3,10 +3,11 @@ import { logger } from "../utils/logger.js";
 export const idempotencyKey = async (req, res, next) =>{
     const key = req.headers['idempotency-key']
     if(!key){
-        return res.status(409).JSON({
-            status:"fail",
-            message:"Idempotency-key is required "
-        })
+        // return res.status(409).JSON({
+        //     status:"fail",
+        //     message:"Idempotency-key is required"
+        // })
+        return next()
     }
 
     const redisLockKey = `idempotency:${key}`;
