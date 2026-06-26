@@ -8,7 +8,7 @@ This document provides full technical integration guidelines for the LinkUp API 
 Depending on your runtime compilation environment, target your networking engine (Axios or Fetch) to one of the following root domain URLs:
 
 * **Local Machine Development (Web/Browser)**: `http://localhost:5000`
-* **Live Production Cloud Server**: `https://render.app` 
+* **Live Production Cloud Server**: `https://linkup-server-17z0.onrender.com` 
 
 ---
 
