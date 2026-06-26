@@ -9,6 +9,7 @@ import {generateAccessToken} from '../utils/generateToken.js'
 import { redis } from "../config/redis.js";
 import { logger } from "../utils/logger.js";
 import dotenv from 'dotenv'
+import jwt from "jsonwebtoken"
 dotenv.config()
 export const registerController = async(req, res, next) =>{
     try{
@@ -138,10 +139,27 @@ export const refreshTokenController = async(req, res, next)=>{
 export const logoutController = async (req, res, next) =>{
     try{
         const {id} = req.user
-        await redis.del(`refresh:${id}`)
+         const authHeader = req.headers.authorization;
+        const accessToken = authHeader && authHeader.split(' ')[1]; 
+        const tokenEpx = req.user.exp
+        if (accessToken) {
+            const currentTime = Math.floor(Date.now() / 1000);
+            const remainingTime = tokenEpx - currentTime;
+                    // 🛑 If the token has time left on the clock, blacklist it until it naturally dies [INDEX]
+            if (remainingTime > 0) {
+                const blacklistKey = `blacklist:${accessToken}`;
+                await redis.set(blacklistKey, 'blacklisted', 'EX', remainingTime);
+             }
+        }
+
+        const keys = await redis.keys(`refresh:${id}`)
+        if(keys.length){
+            await redis.del(keys)
+        }
        res.clearCookie('refreshToken', {
             httpOnly: true,
-            sameSite: 'strict'
+            sameSite: 'strict',
+            secure:process.env.NODE_ENV === 'production'
         });
         return res.status(200).json({
             status: "success",
@@ -163,7 +181,19 @@ export const changePasswordController = async (req, res, next) =>{
     try{
         const id = req.user.id
         const {old_password, new_password} = req.body
+        const authHeader = req.headers.authorization;
+        const accessToken = authHeader && authHeader.split(' ')[1]; 
+        const tokenEpx = req.user.exp
         await changePasswordService(id,old_password, new_password)
+         if (accessToken) {
+            const currentTime = Math.floor(Date.now() / 1000);
+            const remainingTime = tokenEpx - currentTime;
+                    // 🛑 If the token has time left on the clock, blacklist it until it naturally dies [INDEX]
+            if (remainingTime > 0) {
+                const blacklistKey = `blacklist:${accessToken}`;
+                await redis.set(blacklistKey, 'blacklisted', 'EX', remainingTime);
+             }
+        }
         return res.status(200).json({status:"success", message:"password updated sucessfully"})
     }
     catch(error){
