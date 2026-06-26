@@ -10,7 +10,13 @@ export const initSocketEngine = (server) => {
     
     const pubClient = redis;
     const subClient = pubClient.duplicate();
-    
+    pubClient.on('error', (err) => {
+        logger.error(`❌ Redis Master/Pub Client Error: ${err.message}`);
+    });
+
+    subClient.on('error', (err) => {
+        logger.error(`❌ Redis Subscription Client Error: ${err.message}`);
+    });
     io = new Server(server, {
         cors: {
             origin: "*",
