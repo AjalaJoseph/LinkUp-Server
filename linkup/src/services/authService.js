@@ -1,9 +1,10 @@
 import bcrypt from 'bcrypt'
-import { findUserByEmail, createUser,upadeteProfit, uploadProfilePic, changePassword, findUserById  } from '../models/user.js'
+import { findUserByEmail, createUser,upadeteProfit, uploadProfilePic, changePassword, findUserById, resetPassword  } from '../models/user.js'
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js'
 import { redis } from '../config/redis.js'  
 import { uploadToCloudinary, deleteImageFromCloudinary } from './cloudinaryService.js'
 import cloudinary from '../config/cloudinary.js'
+import { emailQueue } from '../BackgroundQueue/resetPassswordQueue.js'
 export const registerUser = async(user) =>{
     const email = user.email
     const userExist = await findUserByEmail(email)
@@ -83,4 +84,52 @@ export const changePasswordService = async (id,oldPassword, newPassword) =>{
     const passwordUpdate = await changePassword(id, hashNewPassword)
     delete passwordUpdate.password
     return passwordUpdate
+}
+
+//  forgot password service
+export const forgotPasswordService = async (email) =>{
+     const checkUser = await findUserByEmail(email);
+            if (!checkUser) {
+                throw Object.assign(new Error('This Email is not yet registered an account.'),{statusCode:404})
+            }
+    
+            let otpCode;
+            let isUnique = false;
+    
+            while (!isUnique) {
+                otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+                const collisionCheck = await redis.get(`password_reset_code:${otpCode}`);
+                if (!collisionCheck) {
+                    isUnique = true;
+                }
+            }
+    
+            // 2. Cache the secure unique lookup reference code inside your Valkey instance
+            const userKey = `password_reset_code:${otpCode}`;
+            await redis.set(userKey, email, 'EX', 600); // 10-minute automatic expiration
+            // 3. 🚀 Push to background BullMQ line using your exact queue name definition
+           const sendOtpEmail = await emailQueue.add('reset-password', {
+                email: email,
+                otpCode: otpCode
+            }, {
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 3000 },
+                removeOnComplete: true
+            });
+            return sendOtpEmail
+}
+
+//  reset- password 
+export const resetPasswordService = async (otpCode, password) =>{
+     const valkeyCodeKey = `password_reset_code:${otpCode}`;
+    const verifyOtp = await redis.get(valkeyCodeKey)
+    if(!verifyOtp){
+        throw Object.assign(new Error("Invalid or expired verification code sequence. Please request a new code."), {statusCode:400})
+    }
+    const newHashPasword = await bcrypt.hash(password, 10)
+    const email = verifyOtp
+    const newPassword = await resetPassword(email, newHashPasword)
+     await redis.del(valkeyCodeKey);
+    delete newPassword.password
+    return newPassword
 }

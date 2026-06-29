@@ -87,3 +87,16 @@ export const changePassword = async (id, newPassword)=>{
     })
     return updatePassword
 }
+
+//  reset password
+export const resetPassword = async (email, password) =>{
+     const resetPassword = await prisma.user.update({
+        where:{
+            email:email
+        },
+        data:{
+            password:password
+        }
+    })
+    return resetPassword
+}

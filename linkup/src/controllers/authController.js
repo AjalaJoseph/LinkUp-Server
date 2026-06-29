@@ -3,13 +3,17 @@ import { registerUser,
     updateService,
      uploadProfileImageService, 
      cloudinaryService,
-    changePasswordService } from "../services/authService.js";
+    changePasswordService,
+    resetPasswordService
+} from "../services/authService.js";
 import { uploadToCloudinary } from "../services/cloudinaryService.js"
 import {generateAccessToken} from '../utils/generateToken.js'
 import { redis } from "../config/redis.js";
 import { logger } from "../utils/logger.js";
 import dotenv from 'dotenv'
 import jwt from "jsonwebtoken"
+import { findUserByEmail } from "../models/user.js";
+import { forgotPasswordService } from "../services/authService.js";
 dotenv.config()
 export const registerController = async(req, res, next) =>{
     try{
@@ -197,6 +201,34 @@ export const changePasswordController = async (req, res, next) =>{
         return res.status(200).json({status:"success", message:"password updated sucessfully"})
     }
     catch(error){
+        next(error)
+    }
+}
+
+// forgot password 
+export const forgotPasswordController = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+         await forgotPasswordService(email)
+        return res.status(200).json({
+            status: "success",
+            message: "Verification code sent to your email."
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+//  reset password controller
+export const resetPasswordController = async (req, res, next) =>{
+    try{
+        const {otpCode, new_password} = req.body
+        await resetPasswordService(otpCode,new_password)
+        return res.status(200).json({
+            status: "success",
+            message: "Password updated successfully. You can now securely log back in."
+        });
+    }catch(error){
         next(error)
     }
 }

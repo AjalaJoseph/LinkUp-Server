@@ -106,3 +106,47 @@ export const changePasswordValidator = [
         return next()
     }
 ]
+
+//  forgot password email validator
+export const ValidateForgotPasswordEmail = [
+    body("email")
+    .trim()
+    .notEmpty()
+    .withMessage('Email field is required')
+    .isEmail().withMessage('Invalid email format'),
+      (req, res, next) =>{
+        const errors = validationResult(req)
+        if(!errors.isEmpty()){
+            const errorMessage = errors.array()[0].msg
+            return res.status(400).json({
+                status:"fail",
+                message:errorMessage
+            })
+        } 
+        return next()
+    }
+]
+
+export const ValidateResetPasswordInput = [
+    body("otpCode")
+    .trim()
+    .notEmpty()
+    .withMessage('otpCode field is required'),
+    body('new_password')
+    .trim()
+    .notEmpty().withMessage('New password field is required')
+    .isStrongPassword()
+    .withMessage("password must be at least 8 characters including 1 lower case 1 upper case, 1 number and 1 symbol"),
+   
+      (req, res, next) =>{
+        const errors = validationResult(req)
+        if(!errors.isEmpty()){
+            const errorMessage = errors.array()[0].msg
+            return res.status(400).json({
+                status:"fail",
+                message:errorMessage
+            })
+        } 
+        return next()
+    }
+]
