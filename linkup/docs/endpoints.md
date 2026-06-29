@@ -564,3 +564,22 @@ Regenerate another access token once it expired
 ```text
   Authorization: Bearer <ACCESS_TOKEN>
 ```
+### forgot password
+enter your register email address to send you reset password otp
+* **Method & Route**: `POST /api/auth/forgot-password`
+**Request Body JSON:**
+```json
+    {
+      "email":"example@gmail.com"
+  }
+```
+### reset password
+Enter the otp coode sent to your gmail 
+*  **Method & Route**: `POST /api/auth/reset-password`
+**Request Body JSON:**
+```json
+    {
+     "otpCode":"565434",
+     "new_password":"example23#"
+  }
+```
