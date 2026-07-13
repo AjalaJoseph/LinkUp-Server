@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === 'production' && process.env.BEHIND_PROXY === 'true'
   console.log('Trust proxy enabled for NGINX.');
 }
 const allowedOrigins = [
-  'https://your-live-app-domain.com', // Production Web Frontend
+  'https://linkup-server-17z0.onrender.com', // Production Web Frontend
   'http://localhost:5173',            // Local Web Development Port
 ];
 
