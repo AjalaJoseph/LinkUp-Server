@@ -30,7 +30,7 @@ app.use(cors({
   },
   credentials: true, // Crucial for mobile apps handling auth tokens or session headers
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'idempotency-key',]
 }));
 app.use(helmet())
 app.use(express.json())
